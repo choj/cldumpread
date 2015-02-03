@@ -3,6 +3,7 @@ import struct
 class header(object):
 	# set new Struct objects with format strings. each object reads/writes binary data per format str
     header_extent = struct.Struct("<h") # little endian short int, single 16-bit word (up to 2^15, one bit unused)
+    adc_extent = struct.Struct("<L") # little endian unsigned long int
     value_8001H = struct.Struct("<h") # "
 	
 	# element 27 refers to codas doc, where el 27 bit 14 specifies packedness
@@ -18,6 +19,13 @@ class header(object):
         self.file.seek(6) # go to 7th byte in file (first byte = 0)
         self.extent = header.header_extent.unpack(self.file.read(2))[0]
         return self.extent
+		
+    def get_adc_extent(self): # get number of bytes in header
+        self.file.seek(8) # go to 9th byte in file (first byte = 0)
+        self.adc_extent = header.adc_extent.unpack(self.file.read(4))[0] # read 4 bytes because a long is 32 bits
+        return self.adc_extent
+
+		#element 6, byte 8-11, type UL, Unpacked Files: Number of ADC data bytes in file excluding header. Can be used to determine trailer start
 
     def get_value_8001H(self):
         self.file.seek(self.extent-2)
