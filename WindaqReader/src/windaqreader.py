@@ -1,5 +1,7 @@
 import os.path
 import decimal
+# To change this template, choose Tools | Templates
+# and open the template in the editor.
 
 __author__="hari"
 __date__ ="$May 20, 2009 11:13:44 AM$"
@@ -9,24 +11,31 @@ import struct
 import csv
 
 class Windaqreader(object):
+
     winvalue_struct = struct.Struct("<h")
     slope_struct = struct.Struct("<d")
     unit_struct = struct.Struct("<B")
+	
     def __init__(self,file):
         self.file = open(file,"rb")
 
     def print_header(self):
         h = header(self.file)
-        extent = h.get_extent()
+        self.header_extent = h.get_extent()
+        self.adc_extent = h.get_adc_extent()
         my8001h = h.get_value_8001H()
-        print("Header Bytes:%d" % extent)
-        print("Value  8001H:%d" % my8001h)
-        print("Is    Packed:%d" % h.get_is_packed())
+        print("Header Bytes: %d" % self.header_extent)
+        print("ADC Data Bytes: %d" % self.adc_extent)
+        print("Value  8001H: %d" % my8001h)
+        print("Is    Packed: %d" % h.get_is_packed())
 		
     def get_slope(self):
-        self.file.seek(110)
-        self.file.read(4)
-        self.file.read(4)
+	
+		# below three values hardcoded for single channel
+		self.file.seek(110)
+		
+		# seek to byte 118, which is item 3 in element 34 per CODAS spec, storing slope (m)
+        self.file.seek(118)
 
         self.slope = Windaqreader.slope_struct.unpack(self.file.read(8))[0]
         self.intercept = Windaqreader.slope_struct.unpack(self.file.read(8))[0]
@@ -34,16 +43,22 @@ class Windaqreader(object):
         print(self.slope , self.intercept, self.tag)
         
     def print_data_file(self):
-        self.file.seek(1156) # hardcoded for single channel?
+	
+		# seek to end of header
+        self.file.seek(self.header_extent)
         self.values = []
 
         try:
-            while True:
+            #while True:
+            while self.file.tell() < self.header_extent + self.adc_extent:
                 data = self.file.read(2)
                 if(data == "" ):
                     break
-                val1 = Windaqreader.winvalue_struct.unpack(data)[0] >> 2 # shift bits right 2 places
+				# shift bits right 2 places per doc. i believe this knocks out the first two bits, which are state vars
+                val1 = Windaqreader.winvalue_struct.unpack(data)[0] >> 2
                 true = round(val1*self.slope + self.intercept, 6)
+                #print(true)
+                print(self.file.tell())
                 composite = []
                 #composite.append(true * -1)
                 composite.append(true)
@@ -57,7 +72,8 @@ class Windaqreader(object):
         self.outfile = open(os.path.splitext(self.file.name)[0] + "_outfile.csv" , "w")
         csvwriter = csv.writer(self.outfile, dialect='excel', lineterminator='\n')
         for val in self.values:
-         csvwriter.writerow(val)
+            csvwriter.writerow(val)
+		 
         self.outfile.write("\n")
         self.outfile.flush()
         self.outfile.close()
@@ -65,7 +81,7 @@ class Windaqreader(object):
 
 def main():
     parser = OptionParser()
-    parser.add_option("-i",dest="file",help="input windaq file",metavar="*.daq")
+    parser.add_option("-i", dest="file", help="input windaq file", metavar="*.daq")
     (options,spillover) = parser.parse_args()
     wq = Windaqreader(options.file)
     wq.print_header()
