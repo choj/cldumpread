@@ -12,18 +12,20 @@ import csv
 
 class Windaqreader(object):
 
-    winvalue_struct = struct.Struct("<h")
-    slope_struct = struct.Struct("<d")
-    unit_struct = struct.Struct("<B")
+    winvalue_struct = struct.Struct("<h") # little endian short int, single 16-bit word (up to 2^15, one bit unused)
+    slope_struct = struct.Struct("<d") # little endian double float, 32-bit
+    unit_struct = struct.Struct("<B") # little endian unsigned char
 	
     def __init__(self,file):
-        self.file = open(file,"rb")
+        self.file = open(file, "rb")
 
     def print_header(self):
         h = header(self.file)
         self.header_extent = h.get_extent()
         self.adc_extent = h.get_adc_extent()
+        self.chan_count = h.get_chan_count()
         my8001h = h.get_value_8001H()
+        print("Channel Count: %d" % self.chan_count)
         print("Header Bytes: %d" % self.header_extent)
         print("ADC Data Bytes: %d" % self.adc_extent)
         print("Value  8001H: %d" % my8001h)
@@ -32,7 +34,7 @@ class Windaqreader(object):
     def get_slope(self):
 	
 		# below three values hardcoded for single channel
-		self.file.seek(110)
+        self.file.seek(110)
 		
 		# seek to byte 118, which is item 3 in element 34 per CODAS spec, storing slope (m)
         self.file.seek(118)
@@ -40,7 +42,7 @@ class Windaqreader(object):
         self.slope = Windaqreader.slope_struct.unpack(self.file.read(8))[0]
         self.intercept = Windaqreader.slope_struct.unpack(self.file.read(8))[0]
         self.tag = self.file.read(6)
-        print(self.slope , self.intercept, self.tag)
+        print(self.slope, self.intercept, self.tag)
         
     def print_data_file(self):
 	
@@ -58,7 +60,7 @@ class Windaqreader(object):
                 val1 = Windaqreader.winvalue_struct.unpack(data)[0] >> 2
                 true = round(val1*self.slope + self.intercept, 6)
                 #print(true)
-                print(self.file.tell())
+                #print(self.file.tell())
                 composite = []
                 #composite.append(true * -1)
                 composite.append(true)
