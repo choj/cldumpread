@@ -8,13 +8,30 @@ class header(object):
 	
 	# element 27 refers to codas doc, where el 27 bit 14 specifies packedness
     element27 = struct.Struct("<H") # little endian unsigned short int, single value
+	
+	
 
     def __init__(self,wholefile):
 		# set self.file = object for this instance of header
         self.file = wholefile
         self.get_extent()
 
+	# get number of channels
+    def get_chan_count(self):
+        if self.get_extent() == 1156:
+            #read chan count for STANDARD windaq file
+            self.file.seek(0)
+            self.chan_count = ord(self.file.read(1)) & ~(1 << 5)
+        else:
+            #read chan count for MULTIPLEXER windaq file
+            self.file.seek(0)
+            self.chan_count = ord(self.file.read(1))
+
+        return self.chan_count
 		
+
+		
+	
     def get_extent(self): # get number of bytes in header
         self.file.seek(6) # go to 7th byte in file (first byte = 0)
         self.extent = header.header_extent.unpack(self.file.read(2))[0]
@@ -28,10 +45,17 @@ class header(object):
 		#element 6, byte 8-11, type UL, Unpacked Files: Number of ADC data bytes in file excluding header. Can be used to determine trailer start
 
     def get_value_8001H(self):
-        self.file.seek(self.extent-2)
-        self.values_8001H = header.value_8001H.unpack(self.file.read(2))
-        return self.values_8001H[0]
+        self.file.seek(self.extent - 2)
+        self.values_8001H = header.value_8001H.unpack(self.file.read(2))[0]
+        return self.values_8001H
 
+	
+	# get slopes of each channel
+	
+	# get y-intercepts each channel
+	
+	# read event markers from trailer
+		
     def get_is_packed(self):
 		# go to 100th byte
         self.file.seek(100)
