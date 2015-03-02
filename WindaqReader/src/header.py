@@ -57,11 +57,6 @@ class header(object):
 		self.values_8001H = header.value_8001H.unpack(self.file.read(2))[0]
 		return self.values_8001H
 
-	
-	# get slopes of each channel
-	
-	# get y-intercepts each channel
-	
 	# read event markers from trailer
 		
 	def get_is_packed(self):
