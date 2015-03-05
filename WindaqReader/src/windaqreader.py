@@ -1,6 +1,7 @@
 import os.path
 import decimal
-
+import numpy as np
+import matplotlib.pyplot as plt
 
 from optparse import OptionParser
 from header import header
@@ -12,7 +13,7 @@ class Windaqreader(object):
 	winvalue_struct = struct.Struct("<h") # little endian short int, single 16-bit word (up to 2^15, one bit unused)
 	slope_struct = struct.Struct("<d") # little endian double float, 32-bit
 	
-	def __init__(self,file):
+	def __init__(self, file):
 		self.file = open(file, "rb")
 		self.chan_count = header(self.file).get_chan_count()
 
@@ -58,7 +59,7 @@ class Windaqreader(object):
 		print("\n")
 		
 	def print_data_file(self):
-	
+
 		# seek to end of header
 		self.file.seek(self.header_extent)
 		self.values = []
@@ -81,30 +82,53 @@ class Windaqreader(object):
 		# write tab separated values
 		self.outfile = open(os.path.splitext(self.file.name)[0] + "_outfile.csv" , "w")
 		csvwriter = csv.writer(self.outfile, dialect='excel', lineterminator='\n', delimiter = '\t')
-		val_list = self.chan_count * ['']
+
+		val_row = self.chan_count * ['']
 		i = 0
-		
 		for val in self.values:
-			val_list[i] = '{:.6f}'.format(val)
+			val_row[i] = '{:.6f}'.format(val)
 			i += 1
 			if i == self.chan_count:
+				csvwriter.writerow(val_row)
 				i = 0
-				csvwriter.writerow(val_list)
 		 
 		self.outfile.write("\n")
 		self.outfile.flush()
 		self.outfile.close()
-
+		
+		return self
+		
+# import channel into numpy array
 
 def main():
 	parser = OptionParser()
 	parser.add_option("-i", dest="file", help="input windaq file", metavar="*.daq")
 	(options,spillover) = parser.parse_args()
 	wq = Windaqreader(options.file)
+	
 	wq.print_header()
 	wq.get_slope()
 	wq.get_slopes()
-	wq.print_data_file()
+		
+	# define numpy arrays
+	so = wq.print_data_file()
+	print("values per channel: " + str(int(so.adc_extent/2/so.chan_count)))
+	ch_vals = np.zeros(int(so.adc_extent/2/so.chan_count))
+	
+	ch_num = 1
+	i, j = 0, 0
+	for val in so.values:
+		if i == ch_num - 1:
+			ch_vals[j] = val
+			j += 1
+		i += 1
+		if i == so.chan_count:
+			i = 0
+	plt.ion()
+	plt.plot(ch_vals, marker=".", linestyle = "none")
+	hi = input("hi")
+
+
 
 
 if __name__ == "__main__":
