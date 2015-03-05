@@ -40,17 +40,15 @@ class header(object):
 
 		return self.chan_count
 	
-	def get_extent(self): # get number of bytes in header
-		self.file.seek(6) # go to 7th byte in file (first byte = 0)
+	def get_extent(self): # get number of bytes in header (element 5)
+		self.file.seek(6) # go to byte 6
 		self.extent = header.header_extent.unpack(self.file.read(2))[0]
 		return self.extent
 		
-	def get_adc_extent(self): # get number of bytes in header
-		self.file.seek(8) # go to 9th byte in file (first byte = 0)
+	def get_adc_extent(self): # get number of bytes in adc (excluding header)
+		self.file.seek(8) # byte 8
 		self.adc_extent = header.adc_extent.unpack(self.file.read(4))[0] # read 4 bytes because a long is 32 bits
 		return self.adc_extent
-
-		#element 6, byte 8-11, type UL, Unpacked Files: Number of ADC data bytes in file excluding header. Can be used to determine trailer start
 
 	def get_value_8001H(self):
 		self.file.seek(self.extent - 2)
@@ -71,3 +69,46 @@ class header(object):
 		# this is bitmasking https://en.wikipedia.org/wiki/Bitwise_operation#AND
 		
 		return self.is_packed
+		
+	# calc event markers
+		# get trailer 1 start and end
+		#	 header_extent + adc_extent, header_extent + adc_extent + element 7 (byte 12)
+		# seek to trailer start
+		# there are four possible sequences of signed longs for each event marker 
+		#
+		# 1: [event marker 1][event marker 2] ...
+		# 2: [event marker 1][time/date stamp][event marker 2] ...
+		# 3: [event marker 1][time/date stamp][comment][event marker 2] ...
+		# 4: [event marker 1][comment][event marker 2] ...
+		#
+		# read first long
+		# check if second long is time/date stamp
+		# if YES, check if third long is a comment
+		#	YES comment, skip to fourth long which is an event marker [3]
+		#	NO, third long is event marker [2]
+		# if NO, check if second long is a comment or event marker
+		#	YES comment, skip to third long which is an event marker [4]
+		#	NO, second long is event marker [1]
+		#
+		#
+		#read first long
+		# check if second long is time/date stamp
+		# if YES, check if third long is a comment
+		#	YES comment, skip to fourth long which is an event marker [3]
+		#	NO, third long is event marker [2]
+		# if NO, check if second long is a comment or event marker
+		#	YES comment, skip to third long which is an event marker [4]
+		#	NO, second long is event marker [1]
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
