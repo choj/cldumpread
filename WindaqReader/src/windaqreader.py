@@ -3,7 +3,7 @@ import decimal
 import numpy as np
 import matplotlib.pyplot as plt
 
-from optparse import OptionParser
+import argparse
 from header import header
 import struct
 import csv
@@ -103,10 +103,15 @@ class Windaqreader(object):
 # import channel into numpy array
 
 def main():
-	parser = OptionParser()
-	parser.add_option("-i", dest="file", help="input windaq file", metavar="*.daq")
-	(options,spillover) = parser.parse_args()
-	wq = Windaqreader(options.file)
+	# parser for command line options
+	# example usage: python windaqreader.py -i file.wdq -c 3 
+	parser = argparse.ArgumentParser(description='demo')
+	parser.add_argument("-i", dest='file', help='input windaq file', metavar="*.wdq")
+	parser.add_argument("-c", dest="chan", help="channel to plot")
+	args = parser.parse_args()
+
+	wq = Windaqreader(vars(args)['file'])
+	ch_num = int(vars(args)['chan'])
 	
 	wq.print_header()
 	wq.get_slope()
@@ -117,7 +122,6 @@ def main():
 	print("values per channel: " + str(int(so.adc_extent/2/so.chan_count)))
 	ch_vals = np.zeros(int(so.adc_extent/2/so.chan_count))
 	
-	ch_num = 1
 	i, j = 0, 0
 	for val in so.values:
 		if i == ch_num - 1:
