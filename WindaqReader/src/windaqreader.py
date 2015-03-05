@@ -47,6 +47,8 @@ class Windaqreader(object):
 		self.slopes = []
 		self.intercepts = []
 		self.tags = []
+		
+		# jump thru channel info sections. each chan structure is 36 bytes. m slope starts at byte 118, b intercept follows
 		for i in range(self.chan_count):
 			self.file.seek(118 + i*36)
 			self.slopes.append(Windaqreader.slope_struct.unpack(self.file.read(8))[0])
