@@ -15,7 +15,7 @@ class Windaqreader(object):
 	
 	def __init__(self, file):
 		self.file = open(file, "rb")
-		self.chan_count = header(self.file).get_chan_count()
+		self.chan_count = header(self.file).chan_count
 
 	def print_header(self):
 		h = header(self.file)
@@ -27,20 +27,7 @@ class Windaqreader(object):
 		print("ADC Data Bytes: %d" % self.adc_extent)
 		print("Value  8001H: %d" % my8001h)
 		print("Is   Packed: %d" % h.get_is_packed())
-		
-	def get_slope(self):
-	
-		# below three values hardcoded for single channel
-		self.file.seek(110)
-		
-		# seek to byte 118, which is item 3 in element 34 per CODAS spec, storing slope (m)
-		self.file.seek(118)
-
-		self.slope = Windaqreader.slope_struct.unpack(self.file.read(8))[0]
-		self.intercept = Windaqreader.slope_struct.unpack(self.file.read(8))[0]
-		self.tag = self.file.read(4).decode('ascii')
-		
-		print(self.slope, self.intercept, self.tag)
+		print("Sample Rate: %d Hz" % h.get_sample_rate())
 		
 	def get_slopes(self):
 		# get all slopes per channel count
@@ -114,7 +101,6 @@ def main():
 	ch_num = int(vars(args)['chan'])
 	
 	wq.print_header()
-	wq.get_slope()
 	wq.get_slopes()
 		
 	# define numpy arrays
