@@ -13,10 +13,14 @@ class header(object):
 	# element 27 refers to codas doc, where el 27 bit 14 specifies packedness
 	# little endian unsigned short int, single value
 	element27 = struct.Struct("<H") 
+	
+	# element 13 is used to calculate sample rate
+	element13 = struct.Struct("<d")
 
 	def __init__(self, wholefile):
 		# set self.file = object for this instance of header
 		self.file = wholefile
+		self.get_chan_count()
 		self.get_extent()
 
 	# get number of channels
@@ -37,8 +41,15 @@ class header(object):
 			#read chan count for MULTIPLEXER windaq file
 			self.file.seek(0)
 			self.chan_count = ord(self.file.read(1))
-
-		return self.chan_count
+	
+	def get_sample_rate(self):
+		self.file.seek(28)
+		self.el13 = header.element13.unpack(self.file.read(8))[0]
+		
+		# note: codas documentation says sr = number of channels/element 13, which appears incorrect.
+		# 1/element 13 seems to produce correct values
+		self.sr = 1/self.el13
+		return self.sr
 	
 	def get_extent(self): # get number of bytes in header (element 5)
 		self.file.seek(6) # go to byte 6
@@ -99,16 +110,6 @@ class header(object):
 		# if NO, check if second long is a comment or event marker
 		#	YES comment, skip to third long which is an event marker [4]
 		#	NO, second long is event marker [1]
-
-		
-		
-		
-		
-		
-		
-		
-		
-		
 		
 		
 		
